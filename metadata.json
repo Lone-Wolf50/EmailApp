@@ -1,0 +1,6 @@
+{
+  "name": "Wolf - Corporate Comms Pro",
+  "description": "Transforms rough voice notes or casual text into polished, professional workplace emails using AI.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": []
+}
