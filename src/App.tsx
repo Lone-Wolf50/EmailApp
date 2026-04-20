@@ -40,6 +40,7 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const committedTranscriptRef = useRef<string>('');
 
   useEffect(() => {
     // Initialize Speech Recognition
@@ -52,15 +53,25 @@ export default function App() {
       recognitionRef.current!.lang = 'en-US';
 
       recognitionRef.current!.onresult = (event: SpeechRecognitionEvent) => {
-        let transcript = '';
+        let interimTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
+          const result = event.results[i];
+          if (result.isFinal) {
+            // Add a space before appending if committed is not empty
+            committedTranscriptRef.current += (committedTranscriptRef.current ? ' ' : '') + result[0].transcript.trim();
+          } else {
+            interimTranscript += result[0].transcript;
+          }
         }
-        setRoughNote(prev => (prev + ' ' + transcript).trim());
+        // Show committed text + current interim text
+        const combined = (committedTranscriptRef.current + (interimTranscript ? ' ' + interimTranscript : '')).trim();
+        setRoughNote(combined);
       };
 
       recognitionRef.current!.onend = () => {
         setIsListening(false);
+        // Finalize any remaining interim text
+        committedTranscriptRef.current = '';
       };
 
       recognitionRef.current!.onerror = (event: any) => {
@@ -87,6 +98,8 @@ export default function App() {
       recognitionRef.current.stop();
     } else {
       setError(null);
+      // Reset committed transcript each time we start a new session
+      committedTranscriptRef.current = roughNote.trim();
       try {
         recognitionRef.current.start();
         setIsListening(true);
