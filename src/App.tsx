@@ -46,7 +46,7 @@ export default function App() {
   const [copied, setCopied] = useState(false);
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const committedTranscriptRef = useRef<string>('');
+
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -57,20 +57,19 @@ export default function App() {
       recognitionRef.current.interimResults = true;
       recognitionRef.current.lang = 'en-US';
 
-      // ✅ Use resultIndex to only process NEW results — fixes mobile duplicates
-      recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
-        let newFinalTranscript = '';
+      recognitionRef.current!.onresult = (event: SpeechRecognitionEvent) => {
+        let newFinal = '';
+
         for (let i = event.resultIndex; i < event.results.length; i++) {
           if (event.results[i].isFinal) {
-            newFinalTranscript += event.results[i][0].transcript;
+            newFinal += event.results[i][0].transcript;
           }
         }
-        if (newFinalTranscript) {
+
+        if (newFinal) {
           setRoughNote(prev => {
             const trimmed = prev.trim();
-            return trimmed
-              ? `${trimmed} ${newFinalTranscript.trim()}`
-              : newFinalTranscript.trim();
+            return trimmed ? `${trimmed} ${newFinal.trim()}` : newFinal.trim();
           });
         }
       };
