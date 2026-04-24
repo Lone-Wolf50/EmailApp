@@ -61,7 +61,7 @@ export default function App() {
         let sessionFinal = '';
         let sessionInterim = '';
 
-        for (let i = event.resultIndex; i < event.results.length; i++) {  // ← start from resultIndex
+        for (let i = 0; i < event.results.length; i++) {
           const result = event.results[i];
           if (result.isFinal) {
             sessionFinal += result[0].transcript;
@@ -70,12 +70,11 @@ export default function App() {
           }
         }
 
-        if (sessionFinal) {
-          committedTranscriptRef.current += (committedTranscriptRef.current ? ' ' : '') + sessionFinal.trim();
-        }
+        let combined = committedTranscriptRef.current;
+        if (sessionFinal) combined += (combined ? ' ' : '') + sessionFinal.trim();
+        if (sessionInterim) combined += (combined ? ' ' : '') + sessionInterim.trim();
 
-        const display = committedTranscriptRef.current + (sessionInterim ? (committedTranscriptRef.current ? ' ' : '') + sessionInterim.trim() : '');
-        setRoughNote(display);
+        setRoughNote(combined);
       };
 
       recognitionRef.current!.onend = () => {
