@@ -53,36 +53,33 @@ export default function App() {
 
     if (SpeechRecognition) {
       recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current!.continuous = true;
-      recognitionRef.current!.interimResults = true;
-      recognitionRef.current!.lang = 'en-US';
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'en-US';
 
-      recognitionRef.current!.onresult = (event: SpeechRecognitionEvent) => {
-        let sessionFinal = '';
-        let sessionInterim = '';
-
-        for (let i = 0; i < event.results.length; i++) {
-          const result = event.results[i];
-          if (result.isFinal) {
-            sessionFinal += result[0].transcript;
-          } else {
-            sessionInterim += result[0].transcript;
+      // ✅ Use resultIndex to only process NEW results — fixes mobile duplicates
+      recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
+        let newFinalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            newFinalTranscript += event.results[i][0].transcript;
           }
         }
-
-        let combined = committedTranscriptRef.current;
-        if (sessionFinal) combined += (combined ? ' ' : '') + sessionFinal.trim();
-        if (sessionInterim) combined += (combined ? ' ' : '') + sessionInterim.trim();
-
-        setRoughNote(combined);
+        if (newFinalTranscript) {
+          setRoughNote(prev => {
+            const trimmed = prev.trim();
+            return trimmed
+              ? `${trimmed} ${newFinalTranscript.trim()}`
+              : newFinalTranscript.trim();
+          });
+        }
       };
 
-      recognitionRef.current!.onend = () => {
+      recognitionRef.current.onend = () => {
         setIsListening(false);
-        committedTranscriptRef.current = '';
       };
 
-      recognitionRef.current!.onerror = (event: any) => {
+      recognitionRef.current.onerror = (event: any) => {
         console.error('Speech recognition error', event.error);
         if (event.error === 'not-allowed') {
           setError('Microphone access was denied. Please check your browser settings.');
@@ -92,6 +89,10 @@ export default function App() {
         setIsListening(false);
       };
     }
+
+    return () => {
+      recognitionRef.current?.stop();
+    };
   }, []);
 
   // Update active subject/body when results change
@@ -123,10 +124,10 @@ export default function App() {
     }
     if (isListening) {
       recognitionRef.current.stop();
+      setIsListening(false);
     } else {
       setError(null);
       setSuccess(null);
-      committedTranscriptRef.current = roughNote.trim();
       try {
         recognitionRef.current.start();
         setIsListening(true);
