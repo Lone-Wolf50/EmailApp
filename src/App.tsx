@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
+import {
   Mic, MicOff, Send, Copy, Check, Trash2, Sparkles, MessageSquare, AlertCircle, Loader2, Mail, ChevronDown
 } from 'lucide-react';
 import { transformToProfessionalEmail } from './lib/gemini';
@@ -60,20 +60,13 @@ export default function App() {
       recognitionRef.current!.onresult = (event: SpeechRecognitionEvent) => {
         let interimTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const result = event.results[i];
-          if (result.isFinal) {
-            committedTranscriptRef.current += (committedTranscriptRef.current ? ' ' : '') + result[0].transcript.trim();
-          } else {
-            interimTranscript += result[0].transcript;
-          }
+          transcript += event.results[i][0].transcript;
         }
-        const combined = (committedTranscriptRef.current + (interimTranscript ? ' ' + interimTranscript : '')).trim();
-        setRoughNote(combined);
+        setRoughNote(prev => (prev + ' ' + transcript).trim());
       };
 
       recognitionRef.current!.onend = () => {
         setIsListening(false);
-        committedTranscriptRef.current = '';
       };
 
       recognitionRef.current!.onerror = (event: any) => {
@@ -119,8 +112,6 @@ export default function App() {
       recognitionRef.current.stop();
     } else {
       setError(null);
-      setSuccess(null);
-      committedTranscriptRef.current = roughNote.trim();
       try {
         recognitionRef.current.start();
         setIsListening(true);
@@ -262,11 +253,10 @@ export default function App() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={toggleListening}
-                  className={`p-4 rounded-2xl flex items-center justify-center transition-all ${
-                    isListening
+                  className={`p-4 rounded-2xl flex items-center justify-center transition-all ${isListening
                       ? 'bg-red-500 text-white shadow-lg shadow-red-200 ring-4 ring-red-500/20'
                       : 'bg-teal-50 text-teal-600 hover:bg-teal-100 border border-teal-100'
-                  }`}
+                    }`}
                   title={isListening ? 'Stop listening' : 'Start speaking'}
                 >
                   {isListening ? <MicOff className="w-5 h-5 animate-pulse" /> : <Mic className="w-5 h-5" />}
@@ -277,11 +267,10 @@ export default function App() {
                   whileTap={{ scale: 0.98 }}
                   onClick={handleTransform}
                   disabled={!roughNote.trim() || isProcessing}
-                  className={`px-6 py-4 rounded-2xl flex items-center gap-3 font-bold transition-all ${
-                    !roughNote.trim() || isProcessing
+                  className={`px-6 py-4 rounded-2xl flex items-center gap-3 font-bold transition-all ${!roughNote.trim() || isProcessing
                       ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                       : 'bg-gradient-to-r from-teal-500 to-blue-600 text-white shadow-lg shadow-teal-500/20 hover:shadow-teal-500/30'
-                  }`}
+                    }`}
                 >
                   {isProcessing ? (
                     <>
@@ -328,11 +317,10 @@ export default function App() {
                 {emailResults && (
                   <button
                     onClick={copyToClipboard}
-                    className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                      copied
+                    className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold transition-all ${copied
                         ? 'bg-green-100 text-green-700'
                         : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                    }`}
+                      }`}
                   >
                     {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                     {copied ? 'Copied!' : 'Copy Text'}
