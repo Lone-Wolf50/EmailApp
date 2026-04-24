@@ -60,13 +60,20 @@ export default function App() {
       recognitionRef.current!.onresult = (event: SpeechRecognitionEvent) => {
         let interimTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
+          const result = event.results[i];
+          if (result.isFinal) {
+            committedTranscriptRef.current += (committedTranscriptRef.current ? ' ' : '') + result[0].transcript.trim();
+          } else {
+            interimTranscript += result[0].transcript;
+          }
         }
-        setRoughNote(prev => (prev + ' ' + transcript).trim());
+        const combined = (committedTranscriptRef.current + (interimTranscript ? ' ' + interimTranscript : '')).trim();
+        setRoughNote(combined);
       };
 
       recognitionRef.current!.onend = () => {
         setIsListening(false);
+        committedTranscriptRef.current = '';
       };
 
       recognitionRef.current!.onerror = (event: any) => {
@@ -112,6 +119,8 @@ export default function App() {
       recognitionRef.current.stop();
     } else {
       setError(null);
+      setSuccess(null);
+      committedTranscriptRef.current = roughNote.trim();
       try {
         recognitionRef.current.start();
         setIsListening(true);
